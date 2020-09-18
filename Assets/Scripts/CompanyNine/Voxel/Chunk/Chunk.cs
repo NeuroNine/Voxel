@@ -32,7 +32,9 @@ namespace CompanyNine.Voxel.Chunk
                 chunkCoordinate.Z * VoxelData.ChunkWidth);
             chunkObject.name = $"Chunk[{chunkCoordinate}]";
 
+            // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
             meshFilter = chunkObject.AddComponent<MeshFilter>();
+            // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
             meshRenderer = chunkObject.AddComponent<MeshRenderer>();
             meshRenderer.material = world.Material;
 
