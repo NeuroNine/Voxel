@@ -31,9 +31,8 @@ namespace CompanyNine.Voxel
                 BlockTexture.GrassTop, BlockTexture.Dirt), // grass block
         };
 
-        private readonly Chunk.Chunk[,] _chunks =
-            new Chunk.Chunk[VoxelData.WorldSizeInChunks,
-                VoxelData.WorldSizeInChunks];
+        private readonly Chunk.Chunk[][] _chunks =
+            new Chunk.Chunk[VoxelData.WorldSizeInChunks][];
 
         private readonly HashSet<ChunkCoordinate> _activeChunks =
             new HashSet<ChunkCoordinate>();
@@ -46,13 +45,18 @@ namespace CompanyNine.Voxel
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f,
                 VoxelData.ChunkHeight + 5,
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f);
+            
             GenerateWorld();
-
             _currentPlayerChunk = FindChunkCoordinate(player.position);
         }
 
         private void GenerateWorld()
         {
+            for (var i = 0; i < _chunks.Length; i++)
+            {
+                _chunks[i] = new Chunk.Chunk[VoxelData.WorldSizeInChunks];
+            }
+
             const int midPoint = VoxelData.WorldSizeInChunks / 2;
             for (var x = midPoint - VoxelData.ViewDistance;
                 x <= midPoint + VoxelData.ViewDistance;
@@ -93,7 +97,7 @@ namespace CompanyNine.Voxel
 
             foreach (var coord in chunksToUnload)
             {
-                _chunks[coord.X, coord.Z].IsActive = false;
+                _chunks[coord.X][coord.Z].IsActive = false;
             }
         }
 
@@ -104,7 +108,7 @@ namespace CompanyNine.Voxel
                 return;
             }
 
-            var chunk = _chunks[coord.X, coord.Z];
+            var chunk = _chunks[coord.X][coord.Z];
             // Check if it active, if not, activate it.
             if (chunk == null)
                 CreateNewChunk(coord.X, coord.Z);
@@ -147,9 +151,10 @@ namespace CompanyNine.Voxel
 
         private void CreateNewChunk(int x, int z)
         {
-            var chunk = new Chunk.Chunk(this, ChunkCoordinate.Of(x, z));
-            _chunks[x, z] = chunk;
-            _activeChunks.Add(ChunkCoordinate.Of(x, z));
+            var coord = ChunkCoordinate.Of(x, z);
+            var chunk = new Chunk.Chunk(this, coord);
+            _chunks[x][z] = chunk;
+            _activeChunks.Add(coord);
         }
 
         private ChunkCoordinate FindChunkCoordinate(Vector3 worldPosition)
