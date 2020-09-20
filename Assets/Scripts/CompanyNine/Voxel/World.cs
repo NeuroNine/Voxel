@@ -97,6 +97,11 @@ namespace CompanyNine.Voxel
 
             foreach (var coord in chunksToUnload)
             {
+                if (!IsChunkInWorld(coord))
+                {
+                    continue;
+                }
+
                 _chunks[coord.X][coord.Z].IsActive = false;
             }
         }
@@ -124,7 +129,7 @@ namespace CompanyNine.Voxel
         /// </summary>
         /// <param name="position">The <u>world</u> position of the voxel.</param>
         /// <returns>The block id of the voxel</returns>
-        public ushort GetVoxel(Vector3 position)
+        public static ushort GetVoxel(Vector3 position)
         {
             if (!IsVoxelInWorld(position))
             {
@@ -171,9 +176,9 @@ namespace CompanyNine.Voxel
             return IsChunkInWorld(chunkCoordinate.X, chunkCoordinate.Z);
         }
 
-        private static bool IsChunkInWorld(int x, int z)
+        public static bool IsChunkInWorld(int x, int z)
         {
-            return x > 0 && x <= VoxelData.WorldSizeInChunks - 1 && z > 0 &&
+            return x >= 0 && x <= VoxelData.WorldSizeInChunks - 1 && z >= 0 &&
                    z <= VoxelData.WorldSizeInChunks - 1;
         }
 

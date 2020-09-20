@@ -65,7 +65,7 @@ namespace CompanyNine.Voxel.Chunk
                     for (var z = 0; z < blockIdArray2[x][y].Length; z++)
                     {
                         blockIdArray2[x][y][z] =
-                            world.GetVoxel(new Vector3(x, y, z) + Position);
+                            World.GetVoxel(new Vector3(x, y, z) + Position);
                     }
                 }
             }
@@ -73,15 +73,16 @@ namespace CompanyNine.Voxel.Chunk
 
         private void CreateChunkMeshData()
         {
-            for (var y = 0;
-                y < VoxelData.ChunkHeight;
-                y++)
+            for (var y = 0; y < VoxelData.ChunkHeight; y++)
             {
                 for (var x = 0; x < VoxelData.ChunkWidth; x++)
                 {
                     for (var z = 0; z < VoxelData.ChunkWidth; z++)
                     {
-                        AddVoxelDataToChunk(new Vector3Int(x, y, z));
+                        if (world.blockTypes[blockIdArray2[x][y][z]].IsSolid)
+                        {
+                            AddVoxelDataToChunk(new Vector3Int(x, y, z));
+                        }
                     }
                 }
             }
@@ -126,7 +127,7 @@ namespace CompanyNine.Voxel.Chunk
 
 
                 // These values correspond to the indices of the vertex array we have created above.
-                // We are reusing the second and third vertex on each face as the first two vertices of the second triangle
+                // We are reusing the second and third vertex on each face as the first two vertices of the second triangle 
                 // to save space.
                 triangles.Add(vertexIndex);
                 triangles.Add(vertexIndex + 1);
@@ -157,9 +158,9 @@ namespace CompanyNine.Voxel.Chunk
                 // if the voxel is not in this chunk, then retrieve its id from the world and check if its solid or not.
                 return world
                     .blockTypes[
-                        world.GetVoxel(Position + neighborBlockPosition)]
+                        World.GetVoxel(Position + neighborBlockPosition)]
                     .IsSolid;
-            }
+            } 
 
             // if the voxel is in the chunk then pull its coordinate and check if its solid or not.
             return world.blockTypes[blockIdArray2[x][y][z]].IsSolid;
@@ -170,9 +171,9 @@ namespace CompanyNine.Voxel.Chunk
      */
         private static bool IsVoxelInChunk(int x, int y, int z)
         {
-            if (x < 0 || x > VoxelData.ChunkWidth - 1 || y < 0 ||
-                y > VoxelData.ChunkHeight - 1 || z < 0 ||
-                z > VoxelData.ChunkWidth - 1)
+            if (x < 0 || x >= VoxelData.ChunkWidth || y < 0 ||
+                y >= VoxelData.ChunkHeight || z < 0 ||
+                z >= VoxelData.ChunkWidth )
             {
                 return false;
             }
