@@ -38,7 +38,7 @@ namespace CompanyNine.Voxel.Chunk
             meshRenderer = chunkObject.AddComponent<MeshRenderer>();
             meshRenderer.material = world.Material;
 
-            PopulateVoxelMap2();
+            PopulateVoxelMap();
             CreateChunkMeshData();
             CreateMesh();
         }
@@ -55,24 +55,6 @@ namespace CompanyNine.Voxel.Chunk
      * Populates the block id array of this chunk with the information from world generation.
      */
         private void PopulateVoxelMap()
-        {
-            for (var y = 0; y < VoxelData.ChunkHeight; y++)
-            {
-                for (var x = 0; x < VoxelData.ChunkWidth; x++)
-                {
-                    for (var z = 0; z < VoxelData.ChunkWidth; z++)
-                    {
-                        blockIdArray[x, y, z] =
-                            world.GetVoxel(new Vector3(x, y, z) + Position);
-                    }
-                }
-            }
-        }
-
-        /**
-     * Populates the block id array of this chunk with the information from world generation.
-     */
-        private void PopulateVoxelMap2()
         {
             for (var x = 0; x < blockIdArray2.Length; x++)
             {
@@ -107,7 +89,8 @@ namespace CompanyNine.Voxel.Chunk
 
         private void AddVoxelDataToChunk(Vector3Int blockPosition)
         {
-            var faces = (VoxelData.Face[]) Enum.GetValues(typeof(VoxelData.Face));
+            var faces =
+                (VoxelData.Face[]) Enum.GetValues(typeof(VoxelData.Face));
             foreach (var face in faces)
             {
                 // Checks if this face should be drawn by looking at the voxel that would be next to that face. If the value
@@ -124,7 +107,8 @@ namespace CompanyNine.Voxel.Chunk
                 var blockId = blockIdArray2[blockPosition.x][blockPosition
                     .y][blockPosition.z];
 
-                var blockTexture = world.blockTypes[blockId].GetBlockTexture(face);
+                var blockTexture =
+                    world.blockTypes[blockId].GetBlockTexture(face);
 
                 if (blockTexture != null)
                 {
@@ -172,7 +156,8 @@ namespace CompanyNine.Voxel.Chunk
             {
                 // if the voxel is not in this chunk, then retrieve its id from the world and check if its solid or not.
                 return world
-                    .blockTypes[world.GetVoxel(Position + neighborBlockPosition)]
+                    .blockTypes[
+                        world.GetVoxel(Position + neighborBlockPosition)]
                     .IsSolid;
             }
 

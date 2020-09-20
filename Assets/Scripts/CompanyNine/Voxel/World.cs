@@ -174,7 +174,7 @@ namespace CompanyNine.Voxel
         private static bool IsChunkInWorld(int x, int z)
         {
             return x > 0 && x <= VoxelData.WorldSizeInChunks - 1 && z > 0 &&
-                   z < VoxelData.WorldSizeInChunks - 1;
+                   z <= VoxelData.WorldSizeInChunks - 1;
         }
 
         private static bool IsVoxelInWorld(Vector3 voxelPosition)
