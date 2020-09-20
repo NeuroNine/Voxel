@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class VoxelData
 {
-    public const int ChunkWidth = 16;
+    public const int ChunkWidth = 32;
     public const int ChunkHeight = 128;
 
     public const int WorldSizeInChunks = 10;
