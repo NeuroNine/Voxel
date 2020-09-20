@@ -155,6 +155,7 @@ MonoBehaviour:
   player: {fileID: 963194228}
   spawnPosition: {x: 0, y: 0, z: 0}
   material: {fileID: 2100000, guid: 319744b291ddfbd47a6a6cd15148948b, type: 2}
+  seed: 2147483647
 --- !u!4 &423870521
 Transform:
   m_ObjectHideFlags: 0
