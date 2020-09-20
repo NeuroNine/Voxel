@@ -16,7 +16,7 @@ filters = {
 	settings = true
 }
 scopes = {
-	"last_search.AB59B443" = "worl"
+	"last_search.AB59B443" = "Profiler"
 }
 providers = {
 	asset = {

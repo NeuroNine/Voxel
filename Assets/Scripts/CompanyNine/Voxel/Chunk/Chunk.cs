@@ -7,6 +7,7 @@ namespace CompanyNine.Voxel.Chunk
     public class Chunk
     {
         private readonly GameObject _chunkObject;
+
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly MeshRenderer _meshRenderer;
         private readonly MeshFilter _meshFilter;
@@ -18,6 +19,9 @@ namespace CompanyNine.Voxel.Chunk
 
         private readonly ushort[][][] _blockIdArray =
             new ushort[VoxelData.ChunkWidth][][];
+
+        private static readonly VoxelData.Face[] Faces =
+            (VoxelData.Face[]) Enum.GetValues(typeof(VoxelData.Face));
 
         public Chunk(World world, ChunkCoordinate chunkCoordinate)
         {
@@ -33,6 +37,7 @@ namespace CompanyNine.Voxel.Chunk
             _meshFilter = _chunkObject.AddComponent<MeshFilter>();
             // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
             _meshRenderer = _chunkObject.AddComponent<MeshRenderer>();
+            
             _meshRenderer.material = world.Material;
 
             PopulateVoxelMap();
@@ -62,7 +67,7 @@ namespace CompanyNine.Voxel.Chunk
                     for (var z = 0; z < _blockIdArray[x][y].Length; z++)
                     {
                         _blockIdArray[x][y][z] =
-                            World.GetVoxel(new Vector3(x, y, z) + Position);
+                          World.GetVoxel(new Vector3(x, y, z) + Position);
                     }
                 }
             }
@@ -87,9 +92,7 @@ namespace CompanyNine.Voxel.Chunk
 
         private void AddVoxelDataToChunk(Vector3Int blockPosition)
         {
-            var faces =
-                (VoxelData.Face[]) Enum.GetValues(typeof(VoxelData.Face));
-            foreach (var face in faces)
+            foreach (var face in Faces)
             {
                 // Checks if this face should be drawn by looking at the voxel that would be next to that face. If the value
                 // is within the chunk and solid, then we know we do not need to draw it as another voxel is blocking the 
@@ -98,9 +101,6 @@ namespace CompanyNine.Voxel.Chunk
                 {
                     continue;
                 }
-
-                // var blockId = blockIdArray[blockPosition.x, blockPosition.y,
-                //     blockPosition.z];
 
                 var blockId = _blockIdArray[blockPosition.x][blockPosition
                     .y][blockPosition.z];
@@ -157,7 +157,7 @@ namespace CompanyNine.Voxel.Chunk
                     .blockTypes[
                         World.GetVoxel(Position + neighborBlockPosition)]
                     .IsSolid;
-            } 
+            }
 
             // if the voxel is in the chunk then pull its coordinate and check if its solid or not.
             return _world.blockTypes[_blockIdArray[x][y][z]].IsSolid;
@@ -170,7 +170,7 @@ namespace CompanyNine.Voxel.Chunk
         {
             if (x < 0 || x >= VoxelData.ChunkWidth || y < 0 ||
                 y >= VoxelData.ChunkHeight || z < 0 ||
-                z >= VoxelData.ChunkWidth )
+                z >= VoxelData.ChunkWidth)
             {
                 return false;
             }

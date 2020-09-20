@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using CompanyNine.Voxel.Chunk;
+using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Animations;
 using Random = UnityEngine.Random;
 
 namespace CompanyNine.Voxel
@@ -13,6 +16,9 @@ namespace CompanyNine.Voxel
         [SerializeField] private Material material;
         public int seed;
         public Material Material => material;
+
+        private List<float> chunkCreationTime = new List<float>();
+
         public readonly BlockType[] blockTypes =
         {
             BlockType.WithSingleTexture("Air", BlockTexture.Bedrock,
@@ -39,6 +45,9 @@ namespace CompanyNine.Voxel
 
         private ChunkCoordinate _currentPlayerChunk;
 
+        static ProfilerMarker s_PreparePerfMarker =
+            new ProfilerMarker("MySystem.Prepare");
+
         private void Start()
         {
             Random.InitState(seed);
@@ -47,7 +56,19 @@ namespace CompanyNine.Voxel
                 VoxelData.ChunkHeight + 5,
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f);
 
+            var beginTime = Time.realtimeSinceStartup;
+
             GenerateWorld();
+
+            var endTime = Time.realtimeSinceStartup;
+
+            Debug.Log(
+                $"Startup Time to generate World: {endTime - beginTime}s");
+
+
+            Debug.Log(
+                $"Average Chunk Creation Time is: {chunkCreationTime.Average()}");
+
             _currentPlayerChunk = FindChunkCoordinate(player.position);
         }
 
@@ -58,6 +79,7 @@ namespace CompanyNine.Voxel
                 _chunks[i] = new Chunk.Chunk[VoxelData.WorldSizeInChunks];
             }
 
+
             const int midPoint = VoxelData.WorldSizeInChunks / 2;
             for (var x = midPoint - VoxelData.ViewDistance;
                 x <= midPoint + VoxelData.ViewDistance;
@@ -67,9 +89,13 @@ namespace CompanyNine.Voxel
                     z <= midPoint + VoxelData.ViewDistance;
                     z++)
                 {
+                    var beginTime = Time.realtimeSinceStartup;
                     CreateNewChunk(x, z);
+                    var endTime = Time.realtimeSinceStartup;
+                    chunkCreationTime.Add((endTime - beginTime) * 1000);
                 }
             }
+
 
             player.position = spawnPosition;
         }
@@ -114,7 +140,17 @@ namespace CompanyNine.Voxel
                 return;
             }
 
-            var chunk = _chunks[coord.X][coord.Z];
+            Chunk.Chunk chunk;
+            try
+            {
+                chunk = _chunks[coord.X][coord.Z];
+            }
+            catch (NullReferenceException)
+            {
+                Debug.Log($"NPE accessing {coord}");
+                throw;
+            }
+
             // Check if it active, if not, activate it.
             if (chunk == null)
                 CreateNewChunk(coord.X, coord.Z);
@@ -165,10 +201,11 @@ namespace CompanyNine.Voxel
             {
                 return 0;
             }
-            
+
             // otherwise return stone
             return 2;
         }
+
 
         private void CreateNewChunk(int x, int z)
         {
@@ -178,7 +215,9 @@ namespace CompanyNine.Voxel
             }
 
             var coord = ChunkCoordinate.Of(x, z);
+
             var chunk = new Chunk.Chunk(this, coord);
+
             _chunks[x][z] = chunk;
             _activeChunks.Add(coord);
         }
@@ -198,7 +237,7 @@ namespace CompanyNine.Voxel
             return IsChunkInWorld(chunkCoordinate.X, chunkCoordinate.Z);
         }
 
-        public static bool IsChunkInWorld(int x, int z)
+        private static bool IsChunkInWorld(int x, int z)
         {
             return x >= 0 && x <= VoxelData.WorldSizeInChunks - 1 && z >= 0 &&
                    z <= VoxelData.WorldSizeInChunks - 1;
