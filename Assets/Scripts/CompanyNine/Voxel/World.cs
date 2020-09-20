@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using CompanyNine.Voxel.Chunk;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace CompanyNine.Voxel
 {
@@ -10,7 +11,7 @@ namespace CompanyNine.Voxel
         [SerializeField] private Transform player;
         [SerializeField] private Vector3 spawnPosition;
         [SerializeField] private Material material;
-
+        public int seed;
         public Material Material => material;
 
 
@@ -41,6 +42,7 @@ namespace CompanyNine.Voxel
 
         private void Start()
         {
+            Random.InitState(seed);
             spawnPosition = new Vector3(
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f,
                 VoxelData.ChunkHeight + 5,

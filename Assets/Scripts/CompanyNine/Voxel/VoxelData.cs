@@ -3,10 +3,10 @@ using UnityEngine;
 
 public static class VoxelData
 {
-    public const int ChunkWidth = 10;
-    public const int ChunkHeight = 25;
+    public const int ChunkWidth = 16;
+    public const int ChunkHeight = 128;
 
-    public const int WorldSizeInChunks = 100;
+    public const int WorldSizeInChunks = 10;
     public const long WorldSizeInVoxels = WorldSizeInChunks * ChunkWidth;
 
     public const int TextureAtlasSizeInBlocks = 4;
@@ -15,7 +15,7 @@ public static class VoxelData
     /// <summary>
     /// View Distance in Chunks
     /// </summary>
-    public const int ViewDistance = 10;
+    public const int ViewDistance = 5;
     
     public const int AbsoluteDistanceLength = ViewDistance * 2 + 1;
     
