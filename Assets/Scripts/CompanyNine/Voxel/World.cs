@@ -13,8 +13,6 @@ namespace CompanyNine.Voxel
         [SerializeField] private Material material;
         public int seed;
         public Material Material => material;
-
-
         public readonly BlockType[] blockTypes =
         {
             BlockType.WithSingleTexture("Air", BlockTexture.Bedrock,
@@ -30,6 +28,7 @@ namespace CompanyNine.Voxel
                 BlockTexture.LogTop), // log block
             BlockType.WithWrappedSideTexture("Grass", BlockTexture.GrassSide,
                 BlockTexture.GrassTop, BlockTexture.Dirt), // grass block
+            BlockType.WithSingleTexture("Sand", BlockTexture.Sand),
         };
 
         private readonly Chunk.Chunk[][] _chunks =
@@ -47,7 +46,7 @@ namespace CompanyNine.Voxel
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f,
                 VoxelData.ChunkHeight + 5,
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f);
-            
+
             GenerateWorld();
             _currentPlayerChunk = FindChunkCoordinate(player.position);
         }
@@ -133,38 +132,59 @@ namespace CompanyNine.Voxel
         /// <returns>The block id of the voxel</returns>
         public static ushort GetVoxel(Vector3 position)
         {
+            var yPos = Mathf.FloorToInt(position.y);
+            var xzPos = new Vector2(position.x, position.z);
+
+            /* IMMUTABLE PASS */
+
+            // if outside world its air
             if (!IsVoxelInWorld(position))
             {
                 return 0;
             }
 
-            if (position.y < 1)
+            // if bottom of the world, then bedrock
+            if (yPos == 0)
             {
                 return 1;
             }
+            /* BASIC PASS */
 
-            if (position.y < 16)
+            var terrainHeight =
+                Mathf.FloorToInt(VoxelData.ChunkHeight *
+                                 Noise.Get2DPerlinNoise(xzPos, 500, .25f));
+
+            // put grass at the terrain height
+            if (yPos == terrainHeight)
             {
-                return 2;
+                return 6;
             }
 
-            if (position.y < VoxelData.ChunkHeight - 1)
+            // for anything above our terrain height return stone
+            if (yPos > terrainHeight)
             {
-                return 3;
+                return 0;
             }
-
-            return 6;
+            
+            // otherwise return stone
+            return 2;
         }
 
         private void CreateNewChunk(int x, int z)
         {
+            if (!IsChunkInWorld(x, z))
+            {
+                return;
+            }
+
             var coord = ChunkCoordinate.Of(x, z);
             var chunk = new Chunk.Chunk(this, coord);
             _chunks[x][z] = chunk;
             _activeChunks.Add(coord);
         }
 
-        private ChunkCoordinate FindChunkCoordinate(Vector3 worldPosition)
+        private static ChunkCoordinate FindChunkCoordinate(
+            Vector3 worldPosition)
         {
             return ChunkCoordinate.Of(
                 Mathf.FloorToInt(worldPosition.x / VoxelData.ChunkWidth),
