@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using CompanyNine.Voxel.Chunk;
+using CompanyNine.Voxel.Terrain;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace CompanyNine.Voxel
 {
@@ -10,9 +13,13 @@ namespace CompanyNine.Voxel
         [SerializeField] private Transform player;
         [SerializeField] private Vector3 spawnPosition;
         [SerializeField] private Material material;
-
+        public int seed;
+        public BiomeAttributes biome;
         public Material Material => material;
 
+        private readonly List<float> _chunkCreationTime = new List<float>(
+            VoxelData
+                .WorldSizeInChunks * VoxelData.WorldSizeInChunks);
 
         public readonly BlockType[] blockTypes =
         {
@@ -29,6 +36,7 @@ namespace CompanyNine.Voxel
                 BlockTexture.LogTop), // log block
             BlockType.WithWrappedSideTexture("Grass", BlockTexture.GrassSide,
                 BlockTexture.GrassTop, BlockTexture.Dirt), // grass block
+            BlockType.WithSingleTexture("Sand", BlockTexture.Sand),
         };
 
         private readonly Chunk.Chunk[][] _chunks =
@@ -41,12 +49,23 @@ namespace CompanyNine.Voxel
 
         private void Start()
         {
+            Random.InitState(seed);
             spawnPosition = new Vector3(
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f,
                 VoxelData.ChunkHeight + 5,
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f);
-            
+
+            var beginTime = Time.realtimeSinceStartup;
+
             GenerateWorld();
+
+            var endTime = Time.realtimeSinceStartup;
+
+            Debug.Log(
+                $"Startup Time to generate World: {endTime - beginTime}s");
+            Debug.Log(
+                $"Average Chunk Creation Time is: {_chunkCreationTime.Average()}");
+
             _currentPlayerChunk = FindChunkCoordinate(player.position);
         }
 
@@ -66,7 +85,10 @@ namespace CompanyNine.Voxel
                     z <= midPoint + VoxelData.ViewDistance;
                     z++)
                 {
+                    var beginTime = Time.realtimeSinceStartup;
                     CreateNewChunk(x, z);
+                    var endTime = Time.realtimeSinceStartup;
+                    _chunkCreationTime.Add((endTime - beginTime) * 1000);
                 }
             }
 
@@ -113,10 +135,22 @@ namespace CompanyNine.Voxel
                 return;
             }
 
-            var chunk = _chunks[coord.X][coord.Z];
+            Chunk.Chunk chunk;
+            try
+            {
+                chunk = _chunks[coord.X][coord.Z];
+            }
+            catch (NullReferenceException)
+            {
+                Debug.Log($"NPE accessing {coord}");
+                throw;
+            }
+
             // Check if it active, if not, activate it.
             if (chunk == null)
+            {
                 CreateNewChunk(coord.X, coord.Z);
+            }
             else if (!chunk.IsActive)
             {
                 chunk.IsActive = true;
@@ -129,40 +163,92 @@ namespace CompanyNine.Voxel
         /// </summary>
         /// <param name="position">The <u>world</u> position of the voxel.</param>
         /// <returns>The block id of the voxel</returns>
-        public static ushort GetVoxel(Vector3 position)
+        public ushort GetVoxel(Vector3 position)
         {
+            var yPos = Mathf.FloorToInt(position.y);
+            var xzPos = new Vector2(position.x, position.z);
+
+            /* IMMUTABLE PASS */
+
+            // if outside world its air
             if (!IsVoxelInWorld(position))
             {
                 return 0;
             }
 
-            if (position.y < 1)
+            // if bottom of the world, then bedrock
+            if (yPos == 0)
             {
                 return 1;
             }
+            /* BASIC PASS */
 
-            if (position.y < 16)
+            var terrainHeight =
+                Mathf.FloorToInt(biome.terrainHeight *
+                                 Noise.Get2DPerlinNoise(xzPos, 0,
+                                     biome.terrainScale)) +
+                biome.solidGroundHeight;
+            ushort voxelValue;
+            // for anything above our terrain height return air
+            if (yPos > terrainHeight)
             {
-                return 2;
+                voxelValue = 0;
+            }
+            // put grass at the terrain height
+            else if (yPos == terrainHeight)
+            {
+                voxelValue = 6;
+            }
+            // place dirt in the first few layers below the grass
+            else if (yPos < terrainHeight && yPos > terrainHeight - 4)
+            {
+                voxelValue = 3; // dirt
+            }
+            else
+            {
+                // otherwise return stone
+                voxelValue = 2;
             }
 
-            if (position.y < VoxelData.ChunkHeight - 1)
+            /* SECOND PASS */
+
+            if (voxelValue == 2)
             {
-                return 3;
+                foreach (var lode in biome.lodes)
+                {
+                    if (yPos >= lode.minSpawnHeight &&
+                        yPos <= lode.maxSpawnHeight)
+                    {
+                        if (Noise.Get3DPerlinNoise(position, lode.noiseOffset,
+                            lode.scale, lode.threshold))
+                        {
+                            voxelValue = lode.blockId;
+                        }
+                    }
+                }
             }
 
-            return 6;
+            return voxelValue;
         }
+
 
         private void CreateNewChunk(int x, int z)
         {
+            if (!IsChunkInWorld(x, z))
+            {
+                return;
+            }
+
             var coord = ChunkCoordinate.Of(x, z);
+
             var chunk = new Chunk.Chunk(this, coord);
+
             _chunks[x][z] = chunk;
             _activeChunks.Add(coord);
         }
 
-        private ChunkCoordinate FindChunkCoordinate(Vector3 worldPosition)
+        private static ChunkCoordinate FindChunkCoordinate(
+            Vector3 worldPosition)
         {
             return ChunkCoordinate.Of(
                 Mathf.FloorToInt(worldPosition.x / VoxelData.ChunkWidth),
@@ -176,7 +262,7 @@ namespace CompanyNine.Voxel
             return IsChunkInWorld(chunkCoordinate.X, chunkCoordinate.Z);
         }
 
-        public static bool IsChunkInWorld(int x, int z)
+        private static bool IsChunkInWorld(int x, int z)
         {
             return x >= 0 && x <= VoxelData.WorldSizeInChunks - 1 && z >= 0 &&
                    z <= VoxelData.WorldSizeInChunks - 1;
