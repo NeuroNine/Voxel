@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b70acb916a8b7e4d821fe2f8b49f367, type: 3}
+  m_Name: Default
+  m_EditorClassIdentifier: 
+  name: Default
+  solidGroundHeight: 42
+  terrainHeight: 42
+  terrainScale: 0.25
+  lodes:
+  - nodeName: ' DirtLode'
+    blockId: 3
+    minSpawnHeight: 1
+    maxSpawnHeight: 255
+    scale: 0.1
+    threshold: 0.5
+    noiseOffset: 0
+  - nodeName: SandLode
+    blockId: 7
+    minSpawnHeight: 30
+    maxSpawnHeight: 60
+    scale: 0.2
+    threshold: 0.6
+    noiseOffset: 300
+  - nodeName: Cave
+    blockId: 0
+    minSpawnHeight: 1
+    maxSpawnHeight: 255
+    scale: 0.1
+    threshold: 0.55
+    noiseOffset: 3478

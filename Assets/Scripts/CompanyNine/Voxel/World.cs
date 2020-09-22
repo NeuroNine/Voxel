@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using CompanyNine.Voxel.Chunk;
-using Unity.Profiling;
+using CompanyNine.Voxel.Terrain;
 using UnityEngine;
-using UnityEngine.Animations;
 using Random = UnityEngine.Random;
 
 namespace CompanyNine.Voxel
@@ -15,9 +14,12 @@ namespace CompanyNine.Voxel
         [SerializeField] private Vector3 spawnPosition;
         [SerializeField] private Material material;
         public int seed;
+        public BiomeAttributes biome;
         public Material Material => material;
 
-        private List<float> chunkCreationTime = new List<float>();
+        private readonly List<float> _chunkCreationTime = new List<float>(
+            VoxelData
+                .WorldSizeInChunks * VoxelData.WorldSizeInChunks);
 
         public readonly BlockType[] blockTypes =
         {
@@ -45,9 +47,6 @@ namespace CompanyNine.Voxel
 
         private ChunkCoordinate _currentPlayerChunk;
 
-        static ProfilerMarker s_PreparePerfMarker =
-            new ProfilerMarker("MySystem.Prepare");
-
         private void Start()
         {
             Random.InitState(seed);
@@ -64,10 +63,8 @@ namespace CompanyNine.Voxel
 
             Debug.Log(
                 $"Startup Time to generate World: {endTime - beginTime}s");
-
-
             Debug.Log(
-                $"Average Chunk Creation Time is: {chunkCreationTime.Average()}");
+                $"Average Chunk Creation Time is: {_chunkCreationTime.Average()}");
 
             _currentPlayerChunk = FindChunkCoordinate(player.position);
         }
@@ -78,7 +75,6 @@ namespace CompanyNine.Voxel
             {
                 _chunks[i] = new Chunk.Chunk[VoxelData.WorldSizeInChunks];
             }
-
 
             const int midPoint = VoxelData.WorldSizeInChunks / 2;
             for (var x = midPoint - VoxelData.ViewDistance;
@@ -92,10 +88,9 @@ namespace CompanyNine.Voxel
                     var beginTime = Time.realtimeSinceStartup;
                     CreateNewChunk(x, z);
                     var endTime = Time.realtimeSinceStartup;
-                    chunkCreationTime.Add((endTime - beginTime) * 1000);
+                    _chunkCreationTime.Add((endTime - beginTime) * 1000);
                 }
             }
-
 
             player.position = spawnPosition;
         }
@@ -153,7 +148,9 @@ namespace CompanyNine.Voxel
 
             // Check if it active, if not, activate it.
             if (chunk == null)
+            {
                 CreateNewChunk(coord.X, coord.Z);
+            }
             else if (!chunk.IsActive)
             {
                 chunk.IsActive = true;
@@ -166,7 +163,7 @@ namespace CompanyNine.Voxel
         /// </summary>
         /// <param name="position">The <u>world</u> position of the voxel.</param>
         /// <returns>The block id of the voxel</returns>
-        public static ushort GetVoxel(Vector3 position)
+        public ushort GetVoxel(Vector3 position)
         {
             var yPos = Mathf.FloorToInt(position.y);
             var xzPos = new Vector2(position.x, position.z);
@@ -187,23 +184,51 @@ namespace CompanyNine.Voxel
             /* BASIC PASS */
 
             var terrainHeight =
-                Mathf.FloorToInt(VoxelData.ChunkHeight *
-                                 Noise.Get2DPerlinNoise(xzPos, 500, .25f));
-
-            // put grass at the terrain height
-            if (yPos == terrainHeight)
-            {
-                return 6;
-            }
-
-            // for anything above our terrain height return stone
+                Mathf.FloorToInt(biome.terrainHeight *
+                                 Noise.Get2DPerlinNoise(xzPos, 0,
+                                     biome.terrainScale)) +
+                biome.solidGroundHeight;
+            ushort voxelValue;
+            // for anything above our terrain height return air
             if (yPos > terrainHeight)
             {
-                return 0;
+                voxelValue = 0;
+            }
+            // put grass at the terrain height
+            else if (yPos == terrainHeight)
+            {
+                voxelValue = 6;
+            }
+            // place dirt in the first few layers below the grass
+            else if (yPos < terrainHeight && yPos > terrainHeight - 4)
+            {
+                voxelValue = 3; // dirt
+            }
+            else
+            {
+                // otherwise return stone
+                voxelValue = 2;
             }
 
-            // otherwise return stone
-            return 2;
+            /* SECOND PASS */
+
+            if (voxelValue == 2)
+            {
+                foreach (var lode in biome.lodes)
+                {
+                    if (yPos >= lode.minSpawnHeight &&
+                        yPos <= lode.maxSpawnHeight)
+                    {
+                        if (Noise.Get3DPerlinNoise(position, lode.noiseOffset,
+                            lode.scale, lode.threshold))
+                        {
+                            voxelValue = lode.blockId;
+                        }
+                    }
+                }
+            }
+
+            return voxelValue;
         }
 
 

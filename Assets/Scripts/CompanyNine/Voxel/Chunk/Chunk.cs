@@ -67,7 +67,7 @@ namespace CompanyNine.Voxel.Chunk
                     for (var z = 0; z < _blockIdArray[x][y].Length; z++)
                     {
                         _blockIdArray[x][y][z] =
-                          World.GetVoxel(new Vector3(x, y, z) + Position);
+                          _world.GetVoxel(new Vector3(x, y, z) + Position);
                     }
                 }
             }
@@ -155,7 +155,7 @@ namespace CompanyNine.Voxel.Chunk
                 // if the voxel is not in this chunk, then retrieve its id from the world and check if its solid or not.
                 return _world
                     .blockTypes[
-                        World.GetVoxel(Position + neighborBlockPosition)]
+                        _world.GetVoxel(Position + neighborBlockPosition)]
                     .IsSolid;
             }
 
