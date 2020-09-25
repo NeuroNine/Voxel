@@ -5,7 +5,7 @@ namespace CompanyNine.Voxel.Terrain
     [CreateAssetMenu(fileName = "BiomeAttributes", menuName = "BiomeAttribute")]
     public class BiomeAttributes : ScriptableObject
     {
-        public string name;
+        public new string name;
         public int solidGroundHeight;
         /// <summary>
         /// Max height above solidGroundHeight.
