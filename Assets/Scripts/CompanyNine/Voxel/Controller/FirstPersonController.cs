@@ -87,7 +87,7 @@ namespace CompanyNine.Voxel.Controller
 
             isSprinting = Input.GetButton("Sprint");
 
-            if (Input.GetButtonDown("Jump"))
+            if (isGrounded && Input.GetButtonDown("Jump"))
             {
                 jumpRequest = true;
             }
