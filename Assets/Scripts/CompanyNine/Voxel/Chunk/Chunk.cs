@@ -17,7 +17,7 @@ namespace CompanyNine.Voxel.Chunk
         private readonly List<int> _triangles = new List<int>();
         private readonly List<Vector2> _uvs = new List<Vector2>();
 
-        private readonly ushort[][][] _blockIdArray =
+        public readonly ushort[][][] blockIdArray =
             new ushort[VoxelData.ChunkWidth][][];
 
         private static readonly VoxelData.Face[] Faces =
@@ -58,15 +58,15 @@ namespace CompanyNine.Voxel.Chunk
      */
         private void PopulateVoxelMap()
         {
-            for (var x = 0; x < _blockIdArray.Length; x++)
+            for (var x = 0; x < blockIdArray.Length; x++)
             {
-                _blockIdArray[x] = new ushort[VoxelData.ChunkHeight][];
-                for (var y = 0; y < _blockIdArray[x].Length; y++)
+                blockIdArray[x] = new ushort[VoxelData.ChunkHeight][];
+                for (var y = 0; y < blockIdArray[x].Length; y++)
                 {
-                    _blockIdArray[x][y] = new ushort[VoxelData.ChunkWidth];
-                    for (var z = 0; z < _blockIdArray[x][y].Length; z++)
+                    blockIdArray[x][y] = new ushort[VoxelData.ChunkWidth];
+                    for (var z = 0; z < blockIdArray[x][y].Length; z++)
                     {
-                        _blockIdArray[x][y][z] =
+                        blockIdArray[x][y][z] =
                           _world.GetVoxel(new Vector3(x, y, z) + Position);
                     }
                 }
@@ -81,7 +81,7 @@ namespace CompanyNine.Voxel.Chunk
                 {
                     for (var z = 0; z < VoxelData.ChunkWidth; z++)
                     {
-                        if (_world.blockTypes[_blockIdArray[x][y][z]].IsSolid)
+                        if (_world.blockTypes[blockIdArray[x][y][z]].IsSolid)
                         {
                             AddVoxelDataToChunk(new Vector3Int(x, y, z));
                         }
@@ -102,7 +102,7 @@ namespace CompanyNine.Voxel.Chunk
                     continue;
                 }
 
-                var blockId = _blockIdArray[blockPosition.x][blockPosition
+                var blockId = blockIdArray[blockPosition.x][blockPosition
                     .y][blockPosition.z];
 
                 var blockTexture =
@@ -160,7 +160,7 @@ namespace CompanyNine.Voxel.Chunk
             }
 
             // if the voxel is in the chunk then pull its coordinate and check if its solid or not.
-            return _world.blockTypes[_blockIdArray[x][y][z]].IsSolid;
+            return _world.blockTypes[blockIdArray[x][y][z]].IsSolid;
         }
 
         /**
