@@ -54,7 +54,7 @@ namespace CompanyNine.Voxel
             Random.InitState(seed);
             spawnPosition = new Vector3(
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f,
-                VoxelData.ChunkHeight+2f,
+                VoxelData.ChunkHeight + 2f,
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f);
 
             var beginTime = Time.realtimeSinceStartup;
@@ -242,7 +242,6 @@ namespace CompanyNine.Voxel
             }
 
             var coord = ChunkCoordinate.Of(x, z);
-
             var chunk = new Chunk.Chunk(this, coord);
 
             _chunks[x][z] = chunk;
@@ -284,13 +283,13 @@ namespace CompanyNine.Voxel
             {
                 return false;
             }
-            
+
             var chunkCoordinate = FindChunkCoordinate(x, z);
 
             var xCheck = Mathf.FloorToInt(x);
             var yCheck = Mathf.FloorToInt(y);
             var zCheck = Mathf.FloorToInt(z);
-            
+
             xCheck -= chunkCoordinate.X * VoxelData.ChunkWidth;
             zCheck -= chunkCoordinate.Z * VoxelData.ChunkWidth;
 
@@ -302,14 +301,11 @@ namespace CompanyNine.Voxel
 
         private static bool IsVoxelInWorld(Vector3 voxelPosition)
         {
-            return voxelPosition.x >= 0 &&
-                   voxelPosition.x < VoxelData.WorldSizeInVoxels &&
-                   voxelPosition.y >= 0 &&
-                   voxelPosition.y < VoxelData.ChunkHeight &&
-                   voxelPosition.z >= 0 &&
-                   voxelPosition.z < VoxelData.WorldSizeInVoxels;
+            return IsVoxelInWorld(voxelPosition.x,
+                voxelPosition.y,
+                voxelPosition.z);
         }
-        
+
         private static bool IsVoxelInWorld(float x, float y, float z)
         {
             return x >= 0 &&

@@ -13,9 +13,9 @@ namespace CompanyNine.Voxel.Controller
         [BoxGroup("Movement Variables:")] public float jumpForce = 5f;
 
         [BoxGroup("Movement Variables:")] [ReadOnly]
-        public Vector3 _velocity;
+        public Vector3 velocity;
 
-        [BoxGroup("Character Attributes")] public float playerWidth = 1;
+        [BoxGroup("Character Attributes")] public float playerWidth = .4f;
         [BoxGroup("Character Attributes")] public float playerHeight = 1.8f;
 
         [BoxGroup("Character Attributes")] [ReadOnly]
@@ -31,8 +31,8 @@ namespace CompanyNine.Voxel.Controller
         private float _vertical;
         private float _rotationX;
         private float _rotationY;
-        private float verticalMomentum;
-        private bool jumpRequest;
+        private float _verticalMomentum;
+        private bool _jumpRequest;
 
         // position tracking variables
         private Vector3 _position;
@@ -65,7 +65,7 @@ namespace CompanyNine.Voxel.Controller
             _forward = _position.z + playerWidth;
             _backward = _position.z - playerWidth;
 
-            if (jumpRequest)
+            if (_jumpRequest)
             {
                 Jump();
             }
@@ -73,7 +73,7 @@ namespace CompanyNine.Voxel.Controller
             CalculateRotation();
             CalculateVelocity();
 
-            transform.Translate(_velocity, Space.World);
+            transform.Translate(velocity, Space.World);
             _camera.localRotation = Quaternion.Euler(-_rotationY, 0f, 0f);
             transform.rotation = Quaternion.Euler(0f, _rotationX, 0f);
         }
@@ -87,9 +87,9 @@ namespace CompanyNine.Voxel.Controller
 
             isSprinting = Input.GetButton("Sprint");
 
-            if (isGrounded && Input.GetButtonDown("Jump"))
+            if (Input.GetButtonDown("Jump"))
             {
-                jumpRequest = true;
+                _jumpRequest = true;
             }
         }
 
@@ -104,48 +104,48 @@ namespace CompanyNine.Voxel.Controller
             var playerTransform = transform;
 
             // Apply Gravity
-            if (verticalMomentum > World.Gravity)
+            if (_verticalMomentum > World.Gravity)
             {
-                verticalMomentum += Time.fixedDeltaTime * World.Gravity;
+                _verticalMomentum += Time.fixedDeltaTime * World.Gravity;
             }
 
             var currentSpeed = isSprinting
                 ? movementSpeed * sprintMultiplier
                 : movementSpeed;
 
-            _velocity = ((playerTransform.forward * _vertical) +
+            velocity = ((playerTransform.forward * _vertical) +
                          (playerTransform.right * _horizontal)) *
                         (Time.fixedDeltaTime * currentSpeed);
 
-            _velocity += Vector3.up * (verticalMomentum * Time.fixedDeltaTime);
+            velocity += Vector3.up * (_verticalMomentum * Time.fixedDeltaTime);
 
-            if ((_velocity.z > 0 && ForwardMovement) ||
-                (_velocity.z < 0 && BackwardMovement))
+            if ((velocity.z > 0 && ForwardMovement) ||
+                (velocity.z < 0 && BackwardMovement))
             {
-                _velocity.z = 0;
+                velocity.z = 0;
             }
 
-            if ((_velocity.x > 0 && RightMovement) ||
-                (_velocity.x < 0 && LeftMovement))
+            if ((velocity.x > 0 && RightMovement) ||
+                (velocity.x < 0 && LeftMovement))
             {
-                _velocity.x = 0;
+                velocity.x = 0;
             }
 
-            if (_velocity.y < 0)
+            if (velocity.y < 0)
             {
-                _velocity.y = CheckDownSpeed(_velocity.y);
+                velocity.y = CheckDownSpeed(velocity.y);
             }
-            else if (_velocity.y > 0)
+            else if (velocity.y > 0)
             {
-                _velocity.y = CheckUpSpeed(_velocity.y);
+                velocity.y = CheckUpSpeed(velocity.y);
             }
         }
 
         private void Jump()
         {
-            verticalMomentum = jumpForce;
+            _verticalMomentum = jumpForce;
             isGrounded = false;
-            jumpRequest = false;
+            _jumpRequest = false;
         }
 
         private float CheckDownSpeed(float downSpeed)
@@ -184,6 +184,7 @@ namespace CompanyNine.Voxel.Controller
                 (_world.IsVoxelSolid(_right, upLocation, _forward) &&
                  (!RightMovement && !ForwardMovement)))
             {
+                _verticalMomentum = 0;
                 return 0;
             }
 

@@ -37,7 +37,7 @@ namespace CompanyNine.Voxel.Chunk
             _meshFilter = _chunkObject.AddComponent<MeshFilter>();
             // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
             _meshRenderer = _chunkObject.AddComponent<MeshRenderer>();
-            
+
             _meshRenderer.material = world.Material;
 
             PopulateVoxelMap();
@@ -67,7 +67,7 @@ namespace CompanyNine.Voxel.Chunk
                     for (var z = 0; z < blockIdArray[x][y].Length; z++)
                     {
                         blockIdArray[x][y][z] =
-                          _world.GetVoxel(new Vector3(x, y, z) + Position);
+                            _world.GetVoxel(new Vector3(x, y, z) + Position);
                     }
                 }
             }
@@ -193,7 +193,7 @@ namespace CompanyNine.Voxel.Chunk
 
         private void AddTexture(int textureId)
         {
-// ReSharper disable once PossibleLossOfFraction
+            // ReSharper disable once PossibleLossOfFraction
             float y = textureId / VoxelData.TextureAtlasSizeInBlocks;
             var x = textureId - (y * VoxelData.TextureAtlasSizeInBlocks);
             x *= VoxelData.NormalizedBlockTextureSize;
