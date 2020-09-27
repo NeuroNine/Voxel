@@ -6,8 +6,8 @@ namespace CompanyNine.Voxel.Chunk
     public static class ChunkUtility
     {
         /// <summary>
-        /// Calculate the necessary new chunks to load based on the
-        /// previous coordinate and the current Coordinate.
+        /// Calculate the necessary new chunks to load based on the previous
+        /// coordinate and the current coordinate.
         /// </summary>
         /// <param name="previousCoordinate">The coordinate we started in. Cannot be null.</param>
         /// <param name="currentCoordinate">The coordinate we are currently in. Cannot be null.</param>
@@ -18,8 +18,8 @@ namespace CompanyNine.Voxel.Chunk
         }
 
         /// <summary>
-        /// Calculate the necessary new chunks to unload  based on the previous
-        /// coordinate and the current Coordinate.
+        /// Calculate the necessary new chunks to unload based on the previous
+        /// coordinate and the current coordinate.
         /// <param name="previousCoordinate">The coordinate we started in. Cannot be null.</param>
         /// <param name="currentCoordinate">The coordinate we are currently in. Cannot be null.</param>
         /// </summary>
@@ -145,8 +145,8 @@ namespace CompanyNine.Voxel.Chunk
                 : coordinate - (VoxelData.ViewDistance * direction)
                 + (VoxelData.AbsoluteDistanceLength * direction) - distance;
         }
-        
-        
+
+
         private static ChunkCoordinate ConstructCoordinate(
             ChunkAxis directionAxis,
             int d, int r)

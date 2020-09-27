@@ -13,9 +13,9 @@ namespace CompanyNine.Voxel.Controller
         [BoxGroup("Movement Variables:")] public float jumpForce = 5f;
 
         [BoxGroup("Movement Variables:")] [ReadOnly]
-        public Vector3 _velocity;
+        public Vector3 velocity;
 
-        [BoxGroup("Character Attributes")] public float playerWidth = 1;
+        [BoxGroup("Character Attributes")] public float playerWidth = .4f;
         [BoxGroup("Character Attributes")] public float playerHeight = 1.8f;
 
         [BoxGroup("Character Attributes")] [ReadOnly]
@@ -31,15 +31,15 @@ namespace CompanyNine.Voxel.Controller
         private float _vertical;
         private float _rotationX;
         private float _rotationY;
-        private float verticalMomentum;
-        private bool jumpRequest;
+        private float _verticalMomentum;
+        private bool _jumpRequest;
 
         // position tracking variables
         private Vector3 _position;
-        private float _forward;
-        private float _backward;
-        private float _right;
-        private float _left;
+        private float _posZ;
+        private float _negZ;
+        private float _posX;
+        private float _negX;
 
         // game object references
         private Transform _camera;
@@ -60,12 +60,12 @@ namespace CompanyNine.Voxel.Controller
         private void FixedUpdate()
         {
             _position = transform.position;
-            _right = _position.x + playerWidth;
-            _left = _position.x - playerWidth;
-            _forward = _position.z + playerWidth;
-            _backward = _position.z - playerWidth;
+            _posX = _position.x + playerWidth;
+            _negX = _position.x - playerWidth;
+            _posZ = _position.z + playerWidth;
+            _negZ = _position.z - playerWidth;
 
-            if (jumpRequest)
+            if (_jumpRequest)
             {
                 Jump();
             }
@@ -73,7 +73,7 @@ namespace CompanyNine.Voxel.Controller
             CalculateRotation();
             CalculateVelocity();
 
-            transform.Translate(_velocity, Space.World);
+            transform.Translate(velocity, Space.World);
             _camera.localRotation = Quaternion.Euler(-_rotationY, 0f, 0f);
             transform.rotation = Quaternion.Euler(0f, _rotationX, 0f);
         }
@@ -87,9 +87,9 @@ namespace CompanyNine.Voxel.Controller
 
             isSprinting = Input.GetButton("Sprint");
 
-            if (isGrounded && Input.GetButtonDown("Jump"))
+            if (Input.GetButton("Jump"))
             {
-                jumpRequest = true;
+                _jumpRequest = true;
             }
         }
 
@@ -104,48 +104,48 @@ namespace CompanyNine.Voxel.Controller
             var playerTransform = transform;
 
             // Apply Gravity
-            if (verticalMomentum > World.Gravity)
+            if (_verticalMomentum > World.Gravity)
             {
-                verticalMomentum += Time.fixedDeltaTime * World.Gravity;
+                _verticalMomentum += Time.fixedDeltaTime * World.Gravity;
             }
 
             var currentSpeed = isSprinting
                 ? movementSpeed * sprintMultiplier
                 : movementSpeed;
 
-            _velocity = ((playerTransform.forward * _vertical) +
-                         (playerTransform.right * _horizontal)) *
-                        (Time.fixedDeltaTime * currentSpeed);
+            velocity = ((playerTransform.forward * _vertical) +
+                        (playerTransform.right * _horizontal)) *
+                       (Time.fixedDeltaTime * currentSpeed);
 
-            _velocity += Vector3.up * (verticalMomentum * Time.fixedDeltaTime);
+            velocity += Vector3.up * (_verticalMomentum * Time.fixedDeltaTime);
 
-            if ((_velocity.z > 0 && ForwardMovement) ||
-                (_velocity.z < 0 && BackwardMovement))
+            if ((velocity.z > 0 && ForwardMovement) ||
+                (velocity.z < 0 && BackMovement))
             {
-                _velocity.z = 0;
+                velocity.z = 0;
             }
 
-            if ((_velocity.x > 0 && RightMovement) ||
-                (_velocity.x < 0 && LeftMovement))
+            if ((velocity.x > 0 && RightMovement) ||
+                (velocity.x < 0 && LeftMovement))
             {
-                _velocity.x = 0;
+                velocity.x = 0;
             }
 
-            if (_velocity.y < 0)
+            if (velocity.y < 0)
             {
-                _velocity.y = CheckDownSpeed(_velocity.y);
+                velocity.y = CheckDownSpeed(velocity.y);
             }
-            else if (_velocity.y > 0)
+            else if (velocity.y > 0)
             {
-                _velocity.y = CheckUpSpeed(_velocity.y);
+                velocity.y = CheckUpSpeed(velocity.y);
             }
         }
 
         private void Jump()
         {
-            verticalMomentum = jumpForce;
+            _verticalMomentum = jumpForce;
             isGrounded = false;
-            jumpRequest = false;
+            _jumpRequest = false;
         }
 
         private float CheckDownSpeed(float downSpeed)
@@ -153,13 +153,13 @@ namespace CompanyNine.Voxel.Controller
             var downLocation = _position.y + downSpeed;
 
             if (
-                (_world.IsVoxelSolid(_left, downLocation, _backward) &&
-                 (!LeftMovement && !BackwardMovement)) ||
-                (_world.IsVoxelSolid(_right, downLocation, _backward) &&
-                 (!RightMovement && !BackwardMovement)) ||
-                (_world.IsVoxelSolid(_left, downLocation, _forward) &&
+                (_world.IsVoxelSolid(_negX, downLocation, _negZ) &&
+                 (!LeftMovement && !BackMovement)) ||
+                (_world.IsVoxelSolid(_posX, downLocation, _negZ) &&
+                 (!RightMovement && !BackMovement)) ||
+                (_world.IsVoxelSolid(_negX, downLocation, _posZ) &&
                  (!LeftMovement && !ForwardMovement)) ||
-                (_world.IsVoxelSolid(_right, downLocation, _forward) &&
+                (_world.IsVoxelSolid(_posX, downLocation, _posZ) &&
                  (!RightMovement && !ForwardMovement)))
             {
                 isGrounded = true;
@@ -175,15 +175,16 @@ namespace CompanyNine.Voxel.Controller
             var upLocation = _position.y + upSpeed + 2f;
 
             if (
-                (_world.IsVoxelSolid(_left, upLocation, _backward) &&
-                 (!LeftMovement && !BackwardMovement)) ||
-                (_world.IsVoxelSolid(_right, upLocation, _backward) &&
-                 (!RightMovement && !BackwardMovement)) ||
-                (_world.IsVoxelSolid(_left, upLocation, _forward) &&
+                (_world.IsVoxelSolid(_negX, upLocation, _negZ) &&
+                 (!LeftMovement && !BackMovement)) ||
+                (_world.IsVoxelSolid(_posX, upLocation, _negZ) &&
+                 (!RightMovement && !BackMovement)) ||
+                (_world.IsVoxelSolid(_negX, upLocation, _posZ) &&
                  (!LeftMovement && !ForwardMovement)) ||
-                (_world.IsVoxelSolid(_right, upLocation, _forward) &&
+                (_world.IsVoxelSolid(_posX, upLocation, _posZ) &&
                  (!RightMovement && !ForwardMovement)))
             {
+                _verticalMomentum = 0;
                 return 0;
             }
 
@@ -191,19 +192,19 @@ namespace CompanyNine.Voxel.Controller
         }
 
         private bool ForwardMovement =>
-            _world.IsVoxelSolid(_position.x, _position.y, _forward) ||
-            _world.IsVoxelSolid(_position.x, _position.y + 1f, _forward);
+            _world.IsVoxelSolid(_position.x, _position.y, _posZ) ||
+            _world.IsVoxelSolid(_position.x, _position.y + 1f, _posZ);
 
-        private bool BackwardMovement =>
-            _world.IsVoxelSolid(_position.x, _position.y, _backward) ||
-            _world.IsVoxelSolid(_position.x, _position.y + 1f, _backward);
+        private bool BackMovement =>
+            _world.IsVoxelSolid(_position.x, _position.y, _negZ) ||
+            _world.IsVoxelSolid(_position.x, _position.y + 1f, _negZ);
 
         private bool LeftMovement =>
-            _world.IsVoxelSolid(_left, _position.y, _position.z) ||
-            _world.IsVoxelSolid(_left, _position.y + 1f, _position.z);
+            _world.IsVoxelSolid(_negX, _position.y, _position.z) ||
+            _world.IsVoxelSolid(_negX, _position.y + 1f, _position.z);
 
         private bool RightMovement =>
-            _world.IsVoxelSolid(_right, _position.y, _position.z) ||
-            _world.IsVoxelSolid(_right, _position.y + 1f, _position.z);
+            _world.IsVoxelSolid(_posX, _position.y, _position.z) ||
+            _world.IsVoxelSolid(_posX, _position.y + 1f, _position.z);
     }
 }

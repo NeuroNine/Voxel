@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using CompanyNine.Voxel.Chunk;
 using CompanyNine.Voxel.Terrain;
+using NaughtyAttributes;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -47,14 +49,22 @@ namespace CompanyNine.Voxel
         private readonly HashSet<ChunkCoordinate> _activeChunks =
             new HashSet<ChunkCoordinate>();
 
+        private readonly List<ChunkCoordinate> _chunksToCreate =
+            new List<ChunkCoordinate>();
+
         private ChunkCoordinate _currentPlayerChunk;
+        
+        private bool _isCreatingChunks;
+        private Noise _noiseGenerator;
+
 
         private void Start()
         {
             Random.InitState(seed);
+            _noiseGenerator = new Noise(seed);
             spawnPosition = new Vector3(
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f,
-                VoxelData.ChunkHeight+2f,
+                VoxelData.ChunkHeight + 2f,
                 (VoxelData.WorldSizeInChunks * VoxelData.ChunkWidth) / 2f);
 
             var beginTime = Time.realtimeSinceStartup;
@@ -68,7 +78,9 @@ namespace CompanyNine.Voxel
             Debug.Log(
                 $"Average Chunk Creation Time is: {_chunkCreationTime.Average()}");
 
-            _currentPlayerChunk = FindChunkCoordinate(player.position);
+            _currentPlayerChunk =
+                ChunkCoordinate.FromWorldPosition(player.position);
+            Debug.Log(_currentPlayerChunk);
         }
 
         private void GenerateWorld()
@@ -88,9 +100,19 @@ namespace CompanyNine.Voxel
                     z++)
                 {
                     var beginTime = Time.realtimeSinceStartup;
-                    CreateNewChunk(x, z);
+                    var coord = ChunkCoordinate.Of(x, z);
+
+                    if (!IsChunkInWorld(coord))
+                    {
+                        continue;
+                    }
+
+                    var chunk = new Chunk.Chunk(this, coord);
+                    chunk.Init();
+                    _chunks[x][z] = chunk;
                     var endTime = Time.realtimeSinceStartup;
                     _chunkCreationTime.Add((endTime - beginTime) * 1000);
+                    _activeChunks.Add(coord);
                 }
             }
 
@@ -99,14 +121,21 @@ namespace CompanyNine.Voxel
 
         private void Update()
         {
-            var chunkCoordinate = FindChunkCoordinate(player.position);
-            if (!chunkCoordinate.Equals(_currentPlayerChunk))
+            var chunkCoordinate =
+                ChunkCoordinate.FromWorldPosition(player.position);
+            if (chunkCoordinate.Equals(_currentPlayerChunk))
             {
-                //  UpdateViewDistance(_currentPlayerChunk, chunkCoordinate);
-                _currentPlayerChunk = chunkCoordinate;
+                return;
+            }
+
+            UpdateViewDistance(_currentPlayerChunk, chunkCoordinate);
+            _currentPlayerChunk = chunkCoordinate;
+
+            if (_chunksToCreate.Count > 0 && !_isCreatingChunks)
+            {
+                StartCoroutine(nameof(CreateChunks));
             }
         }
-
 
         private void UpdateViewDistance(ChunkCoordinate previous,
             ChunkCoordinate current)
@@ -130,6 +159,20 @@ namespace CompanyNine.Voxel
             }
         }
 
+        private IEnumerator CreateChunks()
+        {
+            _isCreatingChunks = true;
+
+            while (_chunksToCreate.Count > 0)
+            {
+                _chunks[_chunksToCreate[0].X][_chunksToCreate[0].Z].Init();
+                _chunksToCreate.RemoveAt(0);
+                yield return null;
+            }
+
+            _isCreatingChunks = false;
+        }
+
         private void ActivateChunk(ChunkCoordinate coord)
         {
             if (!IsChunkInWorld(coord))
@@ -137,27 +180,20 @@ namespace CompanyNine.Voxel
                 return;
             }
 
-            Chunk.Chunk chunk;
-            try
-            {
-                chunk = _chunks[coord.X][coord.Z];
-            }
-            catch (NullReferenceException)
-            {
-                Debug.Log($"NPE accessing {coord}");
-                throw;
-            }
+            var chunk = _chunks[coord.X][coord.Z];
 
-            // Check if it active, if not, activate it.
+            // Check if active; if not, activate it.
             if (chunk == null)
             {
-                CreateNewChunk(coord.X, coord.Z);
+                _chunks[coord.X][coord.Z] = new Chunk.Chunk(this, coord);
+                _chunksToCreate.Add(coord);
             }
             else if (!chunk.IsActive)
             {
                 chunk.IsActive = true;
-                _activeChunks.Add((coord));
             }
+
+            _activeChunks.Add(coord);
         }
 
         /// <summary>
@@ -183,13 +219,14 @@ namespace CompanyNine.Voxel
             {
                 return 1;
             }
+
             /* BASIC PASS */
 
             var terrainHeight =
-                Mathf.FloorToInt(biome.terrainHeight *
-                                 Noise.Get2DPerlinNoise(xzPos, 0,
-                                     biome.terrainScale)) +
+                Mathf.FloorToInt(biome.terrainHeight * 
+                                 _noiseGenerator.Get2DNoise(xzPos, 0, biome.terrainScale)) +
                 biome.solidGroundHeight;
+
             ushort voxelValue;
             // for anything above our terrain height return air
             if (yPos > terrainHeight)
@@ -221,7 +258,8 @@ namespace CompanyNine.Voxel
                     if (yPos >= lode.minSpawnHeight &&
                         yPos <= lode.maxSpawnHeight)
                     {
-                        if (Noise.Get3DPerlinNoise(position, lode.noiseOffset,
+                        if (_noiseGenerator.Get3DSimplex(position,
+                            lode.noiseOffset,
                             lode.scale, lode.threshold))
                         {
                             voxelValue = lode.blockId;
@@ -234,39 +272,6 @@ namespace CompanyNine.Voxel
         }
 
 
-        private void CreateNewChunk(int x, int z)
-        {
-            if (!IsChunkInWorld(x, z))
-            {
-                return;
-            }
-
-            var coord = ChunkCoordinate.Of(x, z);
-
-            var chunk = new Chunk.Chunk(this, coord);
-
-            _chunks[x][z] = chunk;
-            _activeChunks.Add(coord);
-        }
-
-        private static ChunkCoordinate FindChunkCoordinate(
-            Vector3 worldPosition)
-        {
-            return ChunkCoordinate.Of(
-                Mathf.FloorToInt(worldPosition.x / VoxelData.ChunkWidth),
-                Mathf.FloorToInt(worldPosition.z / VoxelData.ChunkWidth));
-        }
-
-        private static ChunkCoordinate FindChunkCoordinate(
-            float worldPositionX, float worldPositionZ)
-        {
-            return ChunkCoordinate.Of(
-                Mathf.FloorToInt(worldPositionX / VoxelData.ChunkWidth),
-                Mathf.FloorToInt(worldPositionZ / VoxelData.ChunkWidth));
-        }
-
-
-        // ReSharper disable once UnusedMember.Local
         private static bool IsChunkInWorld(ChunkCoordinate chunkCoordinate)
         {
             return IsChunkInWorld(chunkCoordinate.X, chunkCoordinate.Z);
@@ -278,38 +283,44 @@ namespace CompanyNine.Voxel
                    z <= VoxelData.WorldSizeInChunks - 1;
         }
 
+        public bool IsVoxelSolid(Vector3 worldPosition)
+        {
+            return IsVoxelSolid(worldPosition.x, worldPosition.y,
+                worldPosition.z);
+        }
+
+
         public bool IsVoxelSolid(float x, float y, float z)
         {
             if (!IsVoxelInWorld(x, y, z))
             {
                 return false;
             }
-            
-            var chunkCoordinate = FindChunkCoordinate(x, z);
 
-            var xCheck = Mathf.FloorToInt(x);
-            var yCheck = Mathf.FloorToInt(y);
-            var zCheck = Mathf.FloorToInt(z);
-            
-            xCheck -= chunkCoordinate.X * VoxelData.ChunkWidth;
-            zCheck -= chunkCoordinate.Z * VoxelData.ChunkWidth;
+            var coord = ChunkCoordinate.FromWorldPosition(x, z);
 
-            var blockType = _chunks[chunkCoordinate.X][chunkCoordinate.Z]
-                .blockIdArray[xCheck][yCheck][zCheck];
+            // if (!IsChunkInWorld(coord) || y < 0 || y > VoxelData.ChunkHeight)
+            // {
+            //     return false;
+            // }
+            var chunk = _chunks[coord.X][coord.Z];
 
-            return blockTypes[blockType].IsSolid;
+            if (chunk != null && chunk.Initialized)
+            {
+                return blockTypes[chunk.GetVoxelFromWorldPosition(x, y, z)]
+                    .IsSolid;
+            }
+
+            return blockTypes[GetVoxel(new Vector3(x, y, z))].IsSolid;
         }
 
         private static bool IsVoxelInWorld(Vector3 voxelPosition)
         {
-            return voxelPosition.x >= 0 &&
-                   voxelPosition.x < VoxelData.WorldSizeInVoxels &&
-                   voxelPosition.y >= 0 &&
-                   voxelPosition.y < VoxelData.ChunkHeight &&
-                   voxelPosition.z >= 0 &&
-                   voxelPosition.z < VoxelData.WorldSizeInVoxels;
+            return IsVoxelInWorld(voxelPosition.x,
+                voxelPosition.y,
+                voxelPosition.z);
         }
-        
+
         private static bool IsVoxelInWorld(float x, float y, float z)
         {
             return x >= 0 &&
@@ -382,23 +393,16 @@ namespace CompanyNine.Voxel
 
         public BlockTexture GetBlockTexture(VoxelData.Face face)
         {
-            switch (face)
+            return face switch
             {
-                case VoxelData.Face.Back:
-                    return BackTexture;
-                case VoxelData.Face.Front:
-                    return FrontTexture;
-                case VoxelData.Face.Top:
-                    return TopTexture;
-                case VoxelData.Face.Bottom:
-                    return BottomTexture;
-                case VoxelData.Face.Left:
-                    return LeftTexture;
-                case VoxelData.Face.Right:
-                    return RightTexture;
-                default:
-                    throw new ArgumentException("Invalid Face: " + face);
-            }
+                VoxelData.Face.Back => BackTexture,
+                VoxelData.Face.Front => FrontTexture,
+                VoxelData.Face.Top => TopTexture,
+                VoxelData.Face.Bottom => BottomTexture,
+                VoxelData.Face.Left => LeftTexture,
+                VoxelData.Face.Right => RightTexture,
+                _ => throw new ArgumentException("Invalid Face: " + face)
+            };
         }
     }
 
