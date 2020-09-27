@@ -36,5 +36,5 @@ MonoBehaviour:
     minSpawnHeight: 1
     maxSpawnHeight: 255
     scale: 0.05
-    threshold: 0.55
+    threshold: 0.75
     noiseOffset: 3478

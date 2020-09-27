@@ -220,7 +220,7 @@ MonoBehaviour:
   sprintMultiplier: 1.5
   jumpForce: 6
   velocity: {x: 0, y: 0, z: 0}
-  playerWidth: 1
+  playerWidth: 0.4
   playerHeight: 1.8
   isSprinting: 0
   isGrounded: 0

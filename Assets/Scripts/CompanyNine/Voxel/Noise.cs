@@ -2,25 +2,33 @@
 
 namespace CompanyNine.Voxel
 {
-    public static class Noise
+    public class Noise
     {
-        public static float Get2DPerlinNoise(Vector2 position, float offset,
-            float scale)
+        private long _seed;
+        private OpenSimplex2F _noiseGenerator;
+
+        public Noise(long seed)
         {
-            var posX = (position.x + .1f) / VoxelData.ChunkWidth
-                * scale + offset;
-            var posY = (position.y + .1f) / VoxelData.ChunkWidth
-                * scale + offset;
-            return Mathf.PerlinNoise(posX, posY);
+            _seed = seed;
+            _noiseGenerator = new OpenSimplex2F(seed);
         }
 
-        public static bool Get3DPerlinNoise(Vector3 position, float offset,
+        public float Get2DNoise(Vector2 position, float offset,
+            float scale)
+        {
+            var posX = (position.x / VoxelData.ChunkWidth)
+                * scale + offset;
+            var posY = (position.y / VoxelData.ChunkWidth)
+                * scale + offset;
+            return (float) (_noiseGenerator.Noise2(posX, posY) * 0.5 + 0.5);
+        }
+
+        public bool Get3DNoise(Vector3 position, float offset,
             float scale, float threshold)
         {
             var x = (position.x + offset + +.1f) * scale;
             var y = (position.y + offset + +.1f) * scale;
             var z = (position.z + offset + +.1f) * scale;
-
 
             var xy = Mathf.PerlinNoise(x, y);
             var xz = Mathf.PerlinNoise(x, z);
@@ -31,6 +39,18 @@ namespace CompanyNine.Voxel
             var zy = Mathf.PerlinNoise(z, y);
 
             var noise = (xy + yz + xz + yx + zy + zx) / 6f;
+
+            return noise > threshold;
+        }
+
+        public bool Get3DSimplex(Vector3 position, float offset,
+            float scale, float threshold)
+        {
+            var x = (position.x + offset) * scale;
+            var y = (position.y + offset) * scale;
+            var z = (position.z + offset) * scale;
+
+            var noise = _noiseGenerator.Noise3_XZBeforeY(x, y, z) * .5 + .5;
 
             return noise > threshold;
         }

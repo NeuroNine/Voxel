@@ -1,4 +1,6 @@
-﻿namespace CompanyNine.Voxel.Chunk
+﻿using UnityEngine;
+
+namespace CompanyNine.Voxel.Chunk
 {
     public readonly struct ChunkCoordinate
     {
@@ -15,6 +17,22 @@
 
         public static ChunkCoordinate Of(int x, int z)
         {
+            return new ChunkCoordinate(x, z);
+        }
+
+        public static ChunkCoordinate FromWorldPosition(float x, float z)
+        {
+            var xCheck = Mathf.FloorToInt(x) / VoxelData.ChunkWidth;
+            var zCheck = Mathf.FloorToInt(z) / VoxelData.ChunkWidth;
+
+            return new ChunkCoordinate(xCheck, zCheck);
+        }
+
+        public static ChunkCoordinate FromWorldPosition(Vector3 position)
+        {
+            var x = Mathf.FloorToInt(position.x) / VoxelData.ChunkWidth;
+            var z = Mathf.FloorToInt(position.z) / VoxelData.ChunkWidth;
+
             return new ChunkCoordinate(x, z);
         }
 
