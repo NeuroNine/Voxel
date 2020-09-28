@@ -224,6 +224,12 @@ MonoBehaviour:
   playerHeight: 1.8
   isSprinting: 0
   isGrounded: 0
+  _horizontal: 0
+  _vertical: 0
+  _rotationX: 0
+  _rotationY: 0
+  _verticalMomentum: 0
+  _jumpRequest: 0
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

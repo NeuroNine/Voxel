@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using NaughtyAttributes;
 using UnityEngine;
 using Cursor = UnityEngine.Cursor;
 
 namespace CompanyNine.Voxel.Controller
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public class FirstPersonController : MonoBehaviour
     {
         [BoxGroup("Movement Variables:")] public float rotationSpeed = 2;
@@ -24,15 +26,22 @@ namespace CompanyNine.Voxel.Controller
         [BoxGroup("Character Attributes")] [ReadOnly]
         public bool isGrounded;
 
+        
         private const int MaximumLookAngle = 90;
 
         // movement tracking variables
-        private float _horizontal;
-        private float _vertical;
-        private float _rotationX;
-        private float _rotationY;
-        private float _verticalMomentum;
-        private bool _jumpRequest;
+        [BoxGroup("Movement Attributes:")]
+        [ReadOnly] [SerializeField]private float _horizontal;
+        [BoxGroup("Movement Attributes:")]
+        [ReadOnly] [SerializeField]private float _vertical;
+        [BoxGroup("Movement Attributes:")]
+        [ReadOnly] [SerializeField]private float _rotationX;
+        [BoxGroup("Movement Attributes:")]
+        [ReadOnly] [SerializeField]private float _rotationY;
+        [BoxGroup("Movement Attributes:")]
+        [ReadOnly] [SerializeField]private float _verticalMomentum;
+        [BoxGroup("Movement Attributes:")]
+        [ReadOnly] [SerializeField]private bool _jumpRequest;
 
         // position tracking variables
         private Vector3 _position;
