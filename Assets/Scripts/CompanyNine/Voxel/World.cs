@@ -53,10 +53,12 @@ namespace CompanyNine.Voxel
             new List<ChunkCoordinate>();
 
         private ChunkCoordinate _currentPlayerChunk;
-        
+
+        public ChunkCoordinate CurrentPlayerChunk => _currentPlayerChunk;
+
         private bool _isCreatingChunks;
         private Noise _noiseGenerator;
-
+        public GameObject debugScreen;
 
         private void Start()
         {
@@ -80,7 +82,6 @@ namespace CompanyNine.Voxel
 
             _currentPlayerChunk =
                 ChunkCoordinate.FromWorldPosition(player.position);
-            Debug.Log(_currentPlayerChunk);
         }
 
         private void GenerateWorld()
@@ -123,18 +124,22 @@ namespace CompanyNine.Voxel
         {
             var chunkCoordinate =
                 ChunkCoordinate.FromWorldPosition(player.position);
-            if (chunkCoordinate.Equals(_currentPlayerChunk))
-            {
-                return;
-            }
 
-            UpdateViewDistance(_currentPlayerChunk, chunkCoordinate);
-            _currentPlayerChunk = chunkCoordinate;
+            if (!chunkCoordinate.Equals(_currentPlayerChunk))
+            {
+                UpdateViewDistance(_currentPlayerChunk, chunkCoordinate);
+                _currentPlayerChunk = chunkCoordinate;
+            }
 
             if (_chunksToCreate.Count > 0 && !_isCreatingChunks)
             {
                 StartCoroutine(nameof(CreateChunks));
             }
+            if (Input.GetKeyDown(KeyCode.F3))
+            {
+                debugScreen.SetActive(!debugScreen.activeSelf);
+            }
+
         }
 
         private void UpdateViewDistance(ChunkCoordinate previous,
@@ -223,8 +228,9 @@ namespace CompanyNine.Voxel
             /* BASIC PASS */
 
             var terrainHeight =
-                Mathf.FloorToInt(biome.terrainHeight * 
-                                 _noiseGenerator.Get2DNoise(xzPos, 0, biome.terrainScale)) +
+                Mathf.FloorToInt(biome.terrainHeight *
+                                 _noiseGenerator.Get2DNoise(xzPos, 0,
+                                     biome.terrainScale)) +
                 biome.solidGroundHeight;
 
             ushort voxelValue;

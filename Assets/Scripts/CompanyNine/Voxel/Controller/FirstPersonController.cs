@@ -26,22 +26,27 @@ namespace CompanyNine.Voxel.Controller
         [BoxGroup("Character Attributes")] [ReadOnly]
         public bool isGrounded;
 
-        
+
         private const int MaximumLookAngle = 90;
 
         // movement tracking variables
-        [BoxGroup("Movement Attributes:")]
-        [ReadOnly] [SerializeField]private float _horizontal;
-        [BoxGroup("Movement Attributes:")]
-        [ReadOnly] [SerializeField]private float _vertical;
-        [BoxGroup("Movement Attributes:")]
-        [ReadOnly] [SerializeField]private float _rotationX;
-        [BoxGroup("Movement Attributes:")]
-        [ReadOnly] [SerializeField]private float _rotationY;
-        [BoxGroup("Movement Attributes:")]
-        [ReadOnly] [SerializeField]private float _verticalMomentum;
-        [BoxGroup("Movement Attributes:")]
-        [ReadOnly] [SerializeField]private bool _jumpRequest;
+        [BoxGroup("Movement Attributes:")] [ReadOnly] [SerializeField]
+        private float _horizontal;
+
+        [BoxGroup("Movement Attributes:")] [ReadOnly] [SerializeField]
+        private float _vertical;
+
+        [BoxGroup("Movement Attributes:")] [ReadOnly] [SerializeField]
+        private float _rotationX;
+
+        [BoxGroup("Movement Attributes:")] [ReadOnly] [SerializeField]
+        private float _rotationY;
+
+        [BoxGroup("Movement Attributes:")] [ReadOnly] [SerializeField]
+        private float _verticalMomentum;
+
+        [BoxGroup("Movement Attributes:")] [ReadOnly] [SerializeField]
+        private bool _jumpRequest;
 
         // position tracking variables
         private Vector3 _position;
@@ -56,8 +61,8 @@ namespace CompanyNine.Voxel.Controller
 
         private void Start()
         {
-            _camera = GameObject.Find("Main Camera").transform;
-            _world = GameObject.Find("World").GetComponent<World>();
+            _camera = GameObject.Find(ObjNames.MainCamera.Name).transform;
+            _world = GameObject.Find(ObjNames.World.Name).GetComponent<World>();
             Cursor.lockState = CursorLockMode.Locked;
         }
 
